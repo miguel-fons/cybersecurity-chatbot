@@ -9,6 +9,10 @@ __pycache__/
 # Base de datos generada automáticamente
 data/chatbot.db
 
+# Archivos de prueba que no deben subirse
+test_admin.py
+test_auth.py
+
 # Configuraciones del editor
 .vscode/
 .idea/
