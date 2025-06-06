@@ -1,0 +1,16 @@
+# Ignorar entorno virtual
+venv/
+
+# Archivos compilados de Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Configuraciones del editor
+.vscode/
+.idea/
+
+# Otros archivos innecesarios
+*.log
+.DS_Store
+.env
