@@ -6,6 +6,9 @@ __pycache__/
 *.py[cod]
 *.pyo
 
+# Base de datos generada automáticamente
+data/chatbot.db
+
 # Configuraciones del editor
 .vscode/
 .idea/
