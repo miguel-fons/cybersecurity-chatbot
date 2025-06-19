@@ -120,6 +120,41 @@ def save_user_interaction(user_id, scenario_id, user_response, chatbot_feedback)
     conn.commit()
     conn.close()
 
+def get_user_stats(user_id):
+    """Obtiene estadísticas agregadas para un usuario."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        '''
+        SELECT
+            COUNT(DISTINCT scenario_id) AS completed,
+            COUNT(*) AS total,
+            SUM(CASE WHEN chatbot_feedback LIKE '¡Correcto!%' THEN 1 ELSE 0 END) AS correct,
+            MAX(timestamp) AS last_active
+        FROM user_interactions
+        WHERE user_id = ?
+        ''',
+        (user_id,)
+    )
+
+    result = cursor.fetchone()
+    conn.close()
+
+    if not result or result[1] == 0:
+        return None
+
+    completed, total, correct, last_active = result
+    correct = correct or 0
+    accuracy = round((correct / total) * 100, 2) if total else 0.0
+
+    return {
+        "completed": completed,
+        "accuracy": accuracy,
+        "last_active": last_active,
+        "score": correct,
+    }
+
 # Ejecutar creación y datos de prueba
 if __name__ == "__main__":
     create_tables()

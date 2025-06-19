@@ -13,8 +13,8 @@ def export_user_stats_to_csv():
         SELECT 
             u.username,
             COUNT(ui.id) as total_respondidos,
-            SUM(CASE WHEN ui.feedback LIKE '¡Correcto!%' THEN 1 ELSE 0 END) as respuestas_correctas,
-            ROUND(100.0 * SUM(CASE WHEN ui.feedback LIKE '¡Correcto!%' THEN 1 ELSE 0 END) / COUNT(ui.id), 2) as porcentaje_aciertos
+            SUM(CASE WHEN ui.chatbot_feedback LIKE '¡Correcto!%' THEN 1 ELSE 0 END) as respuestas_correctas,
+            ROUND(100.0 * SUM(CASE WHEN ui.chatbot_feedback LIKE '¡Correcto!%' THEN 1 ELSE 0 END) / COUNT(ui.id), 2) as porcentaje_aciertos
         FROM users u
         LEFT JOIN user_interactions ui ON u.id = ui.user_id
         GROUP BY u.id
