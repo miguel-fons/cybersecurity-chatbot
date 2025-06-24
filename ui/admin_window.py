@@ -5,29 +5,85 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLabel, QPushButton,
-    QComboBox, QMessageBox, QHBoxLayout, QGroupBox
+    QComboBox, QMessageBox, QHBoxLayout, QGroupBox, QDialog,
+    QLineEdit, QFormLayout
 )
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
 
-# Importaciones relativas
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from auth import get_all_users, delete_user
+from auth import get_all_users, delete_user, register_user
 from utils.csv_exporter import export_user_stats_to_csv
 from database_setup import get_user_stats
+
+class RegisterEmployeeDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Registrar Empleado")
+        self.setGeometry(400, 250, 300, 200)
+        self.setup_ui()
+
+    def setup_ui(self):
+        layout = QFormLayout(self)
+
+        self.user_input = QLineEdit()
+        self.user_input.setPlaceholderText("Usuario")
+        layout.addRow("Usuario:", self.user_input)
+
+        self.pass_input = QLineEdit()
+        self.pass_input.setPlaceholderText("Contraseña (mínimo de 6 caracteres)")
+        self.pass_input.setEchoMode(QLineEdit.EchoMode.Password)
+        layout.addRow("Contraseña:", self.pass_input)
+
+        self.dept_input = QLineEdit()
+        self.dept_input.setPlaceholderText("Departamento")
+        layout.addRow("Departamento:", self.dept_input)
+
+        btn_layout = QHBoxLayout()
+        self.register_btn = QPushButton("Registrar")
+        self.register_btn.clicked.connect(self.register_employee)
+        btn_layout.addWidget(self.register_btn)
+
+        self.cancel_btn = QPushButton("Cancelar")
+        self.cancel_btn.clicked.connect(self.reject)
+        btn_layout.addWidget(self.cancel_btn)
+
+        layout.addRow(btn_layout)
+
+    def register_employee(self):
+        usuario = self.user_input.text().strip()
+        password = self.pass_input.text()
+        dept = self.dept_input.text().strip()
+        if not usuario or not password or not dept:
+            QMessageBox.warning(self, "Error", "Todos los campos son obligatorios.")
+            return
+        if len(password) < 6:
+            QMessageBox.warning(self, "Error", "La contraseña debe tener al menos 6 caracteres.")
+            return
+
+        result = register_user(usuario, password, dept)
+        if "exitosamente" in result:
+            QMessageBox.information(self, "Éxito", result)
+            self.accept()
+        else:
+            QMessageBox.warning(self, "Error", result)
 
 class AdminWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Panel del Administrador")
-        self.setGeometry(300, 200, 500, 400)
+        self.setGeometry(300, 200, 500, 450)
 
         self.setStyleSheet("""
             QWidget {
                 background-color: #F4F4F4;
+                color: black;
             }
             QLabel {
                 font-size: 14px;
+            }
+            QGroupBox {
+                font-size: 14px;
+                color: black;
             }
             QComboBox, QPushButton {
                 padding: 6px;
@@ -41,7 +97,13 @@ class AdminWindow(QWidget):
             QPushButton:hover {
                 background-color: #5E5A85;
             }
-        """)
+            QMessageBox QLabel {
+                color: black;
+            }
+            QMessageBox QPushButton {
+                color: black;
+            }
+        """ )
 
         layout = QVBoxLayout()
 
@@ -71,6 +133,10 @@ class AdminWindow(QWidget):
 
         buttons_layout = QHBoxLayout()
 
+        self.add_button = QPushButton("Agregar empleado")
+        self.add_button.clicked.connect(self.open_register_dialog)
+        buttons_layout.addWidget(self.add_button)
+
         self.export_button = QPushButton("Exportar CSV")
         self.export_button.clicked.connect(self.export_csv)
         buttons_layout.addWidget(self.export_button)
@@ -82,7 +148,6 @@ class AdminWindow(QWidget):
         layout.addLayout(buttons_layout)
         self.setLayout(layout)
 
-        # Mostrar datos del primer usuario por defecto
         if self.user_selector.count() > 0:
             self.display_user_stats()
 
@@ -90,7 +155,7 @@ class AdminWindow(QWidget):
         self.user_selector.clear()
         users = get_all_users()
         for user in users:
-            self.user_selector.addItem(user[1], user[0])  # username, id
+            self.user_selector.addItem(user[1], user[0])
 
     def display_user_stats(self):
         user_id = self.user_selector.currentData()
@@ -103,6 +168,11 @@ class AdminWindow(QWidget):
                 self.score_label.setText(f"Puntaje acumulado: {stats['score']}")
             else:
                 self.completed_label.setText("No hay datos disponibles para este usuario.")
+
+    def open_register_dialog(self):
+        dialog = RegisterEmployeeDialog(self)
+        if dialog.exec():
+            self.refresh_user_list()
 
     def export_csv(self):
         export_user_stats_to_csv()

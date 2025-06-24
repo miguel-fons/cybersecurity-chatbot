@@ -26,8 +26,8 @@ def count_total_users() -> int:
     conn.close()
     return count
 
-def register_user(username: str, password: str) -> str:
-    """Registra un nuevo usuario con rol 'user'. Retorna mensaje de estado."""
+def register_user(username: str, password: str, department: str) -> str:
+    """Registra un nuevo usuario con rol 'user' y departamento. Retorna mensaje de estado."""
     if user_exists(username):
         return "Este nombre de usuario ya está registrado."
 
@@ -36,11 +36,11 @@ def register_user(username: str, password: str) -> str:
 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    hashed_pw = hash_password(password)
 
+    hashed_pw = hash_password(password)
     cursor.execute(
-        "INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)",
-        (username, hashed_pw, "user")
+        "INSERT INTO users (username, password_hash, role, department) VALUES (?, ?, ?, ?)",
+        (username, hashed_pw, "user", department)
     )
     conn.commit()
     conn.close()
@@ -86,13 +86,11 @@ def delete_user(user_id: int) -> bool:
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    # Verificar existencia
     cursor.execute("SELECT id FROM users WHERE id = ?", (user_id,))
     if not cursor.fetchone():
         conn.close()
         return False
 
-    # Eliminar interacciones y métricas relacionadas
     cursor.execute("DELETE FROM user_interactions WHERE user_id = ?", (user_id,))
     cursor.execute("DELETE FROM user_metrics WHERE user_id = ?", (user_id,))
     cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
@@ -104,7 +102,7 @@ def get_all_users() -> list:
     """Devuelve una lista de todos los usuarios registrados (excluyendo al administrador)."""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT id, username FROM users WHERE role = 'user'")
+    cursor.execute("SELECT id, username, department FROM users WHERE role = 'user'")
     users = cursor.fetchall()
     conn.close()
     return users
